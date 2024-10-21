@@ -1,0 +1,6 @@
+scopes:
+  - "https://www.googleapis.com/auth/gmail.readonly"
+  - "https://www.googleapis.com/auth/gmail.modify"
+email_query: "from:someone@domain.com newer_than:7d is:unread"
+otp_pattern: "access code (\\d{6}) online"
+debug: True
