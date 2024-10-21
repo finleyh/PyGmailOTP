@@ -32,7 +32,18 @@ pip install -r requirements.txt
 
 The class was made with running in Docker in mind. This is a helper library to larger automation needs i have. So i know this shouldn't run as root, and relies on config files being dropped in places that can be read and accessed by root, but that is why.
 
-Example Code: 
+
+Below is example code, you can run this via 
+```
+poetry run ./tests/test.py
+```
+
+or manually run the code leveraging
+
+```
+poetry shell
+```
+Here is the example code: 
 
 ```
 from pygmailotp.PyGmailOTP import PyGmailOTP
