@@ -34,16 +34,30 @@ The class was made with running in Docker in mind. This is a helper library to l
 
 
 Below is example code, you can run this via 
+
+1) Clone the repo
+
+2) use poetry install: 
+```
+cd PyGmailOTP
+poetry install
+```
+
+3A) execute the script
+
 ```
 poetry run ./tests/test.py
 ```
 
-or manually run the code leveraging
+3B) or manually run the code leveraging poetry shell
 
 ```
 poetry shell
+cd tests
+python test.py
 ```
-Here is the example code: 
+
+Here is the example code you will find in tests/test.py: 
 
 ```
 from pygmailotp.PyGmailOTP import PyGmailOTP
