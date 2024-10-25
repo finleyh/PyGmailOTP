@@ -35,19 +35,14 @@ class PyGmailOTP():
         config_path - custom path specified by the user to specify the config file, if not exists, loads from default locations
         '''
         user_config_path = os.path.expanduser("~/.PyGmailOTP/config.yaml")
-        system_config_path = "/etc/PyGmailOTP/config.yaml"
 
         if config_path:
             with open(config_path) as file:
                 return yaml.safe_load(file)
-
         if os.path.exists(user_config_path):
             with open(user_config_path) as file:
                 return yaml.safe_load(file) 
 
-        if os.path.exists(system_config_path):
-            with open(system_config_path) as file:
-                return yaml.safe_load(file) 
 
     def get_new_credentials(self, credentials_json):
         self.log("Refreshing credentials!")
@@ -65,20 +60,25 @@ class PyGmailOTP():
         return creds
         
         
-    def load_credentials(self, cred_path=None):
+    def load_credentials(self, custom_pickle_path=None):
         '''
         @params
-        cred_path - a custom path specified by the user to find a pickle file, if not exists, loads from default locations
+        custom_pickle_path - a custom path specified by the user to find a pickle file, if not exists, loads from default locations
         '''
         creds = None
         user_credentials_file=os.path.expanduser("~/.PyGmailOTP/credentials.json")
         user_pickle_path = os.path.expanduser("~/.PyGmailOTP/token.pickle")
-        if cred_path and os.path.exists(cred_path):
-            with open(cred_path) as file:
+        if custom_pickle_path and os.path.exists(custom_pickle_path):
+            self.log("Custom credential/pickle path given, loading* ")
+            with open(custom_pickle_path) as file:
                 creds = pickle.load(file)
         if os.path.exists(user_pickle_path): 
+            self.log("Found existing user credentials")
             with open(user_pickle_path, 'rb') as file:
                 creds = pickle.load(file)
+
+        self.log(f"creds valid? {creds.valid}") 
+
         if not creds or not creds.valid:
             self.log("Credentials were not found or not valid")
             if creds and creds.expired and creds.refresh_token:
@@ -91,7 +91,7 @@ class PyGmailOTP():
                     creds = self.get_new_credentials(user_credentials_file)
             else:
                 with open(os.path.expanduser(user_pickle_path), 'wb') as token:
-                    pickle.dump(creds, token)
+                    creds = pickle.load(token)
                     self.log("Collected existing credentials")
         return creds
             
