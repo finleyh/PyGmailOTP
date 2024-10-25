@@ -50,6 +50,8 @@ class PyGmailOTP():
                 return yaml.safe_load(file) 
 
     def get_new_credentials(self, credentials_json):
+        self.log("Refreshing credentials!")
+        creds = None
         user_pickle_path = os.path.expanduser("~/.PyGmailOTP/token.pickle")
         user_credentials_file=os.path.expanduser("~/.PyGmailOTP/credentials.json")
         if os.path.exists(user_credentials_file):
@@ -78,7 +80,9 @@ class PyGmailOTP():
             with open(user_pickle_path, 'rb') as file:
                 creds = pickle.load(file)
         if not creds or not creds.valid:
+            self.log("Credentials were not found or not valid")
             if creds and creds.expired and creds.refresh_token:
+                self.log("Creds found, but expired and need refresh. you have a refresh token!!")
                 try:
                     creds.refresh(Request())
                     self.log("Credentials refreshed.")
@@ -86,7 +90,9 @@ class PyGmailOTP():
                     self.log(f"Refresh error occured: {e}")
                     creds = self.get_new_credentials(user_credentials_file)
             else:
-                creds = self.get_new_credentials(user_credentials_file)
+                with open(os.path.expanduser(user_pickle_path), 'wb') as token:
+                    pickle.dump(creds, token)
+                    self.log("Collected existing credentials")
         return creds
             
 
