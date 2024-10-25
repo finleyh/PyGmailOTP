@@ -6,6 +6,7 @@ from email import policy
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from google.auth.exceptions import RefreshError
 from googleapiclient.discovery import build
 from bs4 import BeautifulSoup as bs
 import re
@@ -47,6 +48,20 @@ class PyGmailOTP():
         if os.path.exists(system_config_path):
             with open(system_config_path) as file:
                 return yaml.safe_load(file) 
+
+    def get_new_credentials(self, credentials_json):
+        user_pickle_path = os.path.expanduser("~/.PyGmailOTP/token.pickle")
+        user_credentials_file=os.path.expanduser("~/.PyGmailOTP/credentials.json")
+        if os.path.exists(user_credentials_file):
+            flow = InstalledAppFlow.from_client_secrets_file(user_credentials_file, self.config.get('scopes'))
+            creds = flow.run_local_server(port=0)
+            self.log("New credentials obtained.")
+        # Save the updated credentials for future use
+        with open(os.path.expanduser(user_pickle_path), 'wb') as token:
+            pickle.dump(creds, token)
+            self.log("Saved new credentials to pickle file.")
+        return creds
+        
         
     def load_credentials(self, cred_path=None):
         '''
@@ -54,39 +69,24 @@ class PyGmailOTP():
         cred_path - a custom path specified by the user to find a pickle file, if not exists, loads from default locations
         '''
         creds = None
+        user_credentials_file=os.path.expanduser("~/.PyGmailOTP/credentials.json")
         user_pickle_path = os.path.expanduser("~/.PyGmailOTP/token.pickle")
-        system_pickle_path = "/etc/PyGmailOTP/token.pickle"
-
         if cred_path and os.path.exists(cred_path):
             with open(cred_path) as file:
                 creds = pickle.load(file)
-
         if os.path.exists(user_pickle_path): 
             with open(user_pickle_path, 'rb') as file:
                 creds = pickle.load(file)
-        if os.path.exists(system_pickle_path) and creds is None:
-            with open(system_pickle_path, 'rb') as file:
-                creds = pickle.load(file)
-
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-                self.log("Credentials refreshed.")
+                try:
+                    creds.refresh(Request())
+                    self.log("Credentials refreshed.")
+                except RefreshError as e:
+                    self.log(f"Refresh error occured: {e}")
+                    creds = self.get_new_credentials(user_credentials_file)
             else:
-                user_credentials_file=os.path.expanduser("~/.PyGmailOTP/credentials.json")
-                system_credentials_file="/etc/PyGmailOTP/credentials.json"
-                if os.path.exists(user_credentials_file):
-                    flow = InstalledAppFlow.from_client_secrets_file(user_credentials_file, self.config.get('scopes'))
-                    creds = flow.run_local_server(port=0)
-                    self.log("New credentials obtained.")
-                if os.path.exists(system_credentials_file):
-                    flow = InstalledAppFlow.from_client_secrets_file(system_credentials_file, self.config.get('scopes'))
-                    creds = flow.run_local_server(port=0)
-                    self.log("New credentials obtained.")
-            # Save the updated credentials for future use
-            with open(os.path.expanduser(system_pickle_path), 'wb') as token:
-                pickle.dump(creds, token)
-                self.log("Saved new credentials to pickle file.")
+                creds = self.get_new_credentials(user_credentials_file)
         return creds
             
 
